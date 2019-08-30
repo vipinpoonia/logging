@@ -2,7 +2,6 @@ package logging
 
 import (
 	log "github.com/sirupsen/logrus"
-	"logging/sentry"
 	"os"
 )
 
@@ -21,8 +20,8 @@ func Init(conf LogConfig) error {
 	if conf.SentryDsn == "" {
 		log.Warn("SentryDsn is missing")
 	} else {
-		sentryOptions := sentry.Options{Dsn: conf.SentryDsn, AttachStacktrace: true, Environment: conf.Env}
-		hook, err := sentry.NewHook(sentryOptions, log.PanicLevel, log.FatalLevel, log.ErrorLevel)
+		sentryOptions := Options{Dsn: conf.SentryDsn, AttachStacktrace: true, Environment: conf.Env}
+		hook, err := NewHook(sentryOptions, log.PanicLevel, log.FatalLevel, log.ErrorLevel)
 		if err != nil {
 			log.Error("failed to add hook for sentry err:", err)
 		} else {

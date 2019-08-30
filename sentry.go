@@ -1,6 +1,6 @@
 // reference code https://github.com/onrik/logrus.git
 
-package sentry
+package logging
 
 import (
 	"github.com/getsentry/sentry-go"

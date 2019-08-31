@@ -2,6 +2,7 @@ package logging
 
 import (
 	log "github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 	"os"
 	"sync"
 )
@@ -30,6 +31,7 @@ func Init(conf LogConfig) error {
 		hook, err := NewHook(sentryOptions, log.PanicLevel, log.FatalLevel, log.ErrorLevel)
 		if err != nil {
 			log.Error("failed to add hook for sentry err:", err)
+			return errors.New(err.Error())
 		} else {
 			log.AddHook(hook)
 		}

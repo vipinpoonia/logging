@@ -1,25 +1,35 @@
 package logging
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 	"os"
+	"path"
+	"runtime"
 	"sync"
 )
 
-const timeStampFormat = "2006-01-02 15:04:05.999999999Z07:00"
+const timeStampFormat = "2006-01-02 15:04:05.999Z07:00"
 
 func init() {
 	var once sync.Once
 	once.Do(func() {
+
+		log.SetLevel(log.TraceLevel)
+		log.SetOutput(os.Stdout)
+		log.Info("logger is configured")
+		log.SetReportCaller(true)
+
 		log.SetFormatter(&log.TextFormatter{
 			DisableColors:   false,
 			FullTimestamp:   true,
 			TimestampFormat: timeStampFormat,
+			CallerPrettyfier: func(f *runtime.Frame) (string, string) {
+				filename := path.Base(f.File)
+				return fmt.Sprintf("%s()", f.Function), fmt.Sprintf(" %s:%d", filename, f.Line)
+			},
 		})
-		log.SetLevel(log.TraceLevel)
-		log.SetOutput(os.Stdout)
-		log.Info("logger is configured")
 	})
 }
 

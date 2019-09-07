@@ -27,6 +27,7 @@ func test() {
 	log.Error("Something failed but I'm not quitting.")
 	err := func2()
 	log.WithError(err).Error()
+	log.WithError(nil).Error()
 	// Calls os.Exit(1) after logging
 	//log.Fatal("Bye.")
 	// Calls panic() after logging

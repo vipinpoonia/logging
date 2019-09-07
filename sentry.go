@@ -3,6 +3,7 @@
 package logging
 
 import (
+	"fmt"
 	"github.com/getsentry/sentry-go"
 	"github.com/sirupsen/logrus"
 )
@@ -49,33 +50,48 @@ func (hook *Hook) SetEnvironment(environment string) {
 	hook.environment = environment
 }
 
-func (hook *Hook) Fire(entry *logrus.Entry) error {
+func (hook *Hook) constructEvent(entry *logrus.Entry) *sentry.Event{
 	var exceptions []sentry.Exception
-
-	if err, ok := entry.Data[logrus.ErrorKey].(error); ok && err != nil {
-		stacktrace := sentry.ExtractStacktrace(err)
-		if stacktrace == nil {
-			stacktrace = sentry.NewStacktrace()
-		}
-		exceptions = append(exceptions, sentry.Exception{
-			Type:       entry.Message,
-			Value:      err.Error(),
-			Stacktrace: stacktrace,
-		})
-	}
+	err, ok := entry.Data[logrus.ErrorKey].(error)
 
 	event := sentry.Event{
 		Level:       levelsMap[entry.Level],
-		Message:     entry.Message,
 		Extra:       map[string]interface{}(entry.Data),
 		Tags:        hook.tags,
 		Environment: hook.environment,
 		Release:     hook.release,
 		Exception:   exceptions,
+		Message: entry.Message,
 	}
+	if !ok {
+		event.Threads = []sentry.Thread{{
+			Stacktrace: sentry.NewStacktrace(),
+			Crashed:    false,
+			Current:    true,
+		}}
+		return &event
+	}
+	stacktrace := sentry.ExtractStacktrace(err)
+	if stacktrace == nil {
+		stacktrace = sentry.NewStacktrace()
+	}
+	exceptions = append(exceptions, sentry.Exception{
+		Type:       entry.Message,
+		Value:      err.Error(),
+		Stacktrace: stacktrace,
+	})
+
+	event.Exception = exceptions
+	return &event
+
+}
+
+func (hook *Hook) Fire(entry *logrus.Entry) error {
+	fmt.Println(entry.Caller.File, entry.Caller.Line)
+	event := hook.constructEvent(entry)
 
 	hub := sentry.CurrentHub()
-	hook.client.CaptureEvent(&event, nil, hub.Scope())
+	hook.client.CaptureEvent(event, nil, hub.Scope())
 	return nil
 }
 
